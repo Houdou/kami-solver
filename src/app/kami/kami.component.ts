@@ -13,7 +13,7 @@ import * as createjs from 'createjs-module';
 })
 export class KamiComponent implements OnInit, AfterViewInit {
 	@Input()
-	private unitSize: number = 32;
+	private unitSize: number = 64;
 
 	@ViewChild('canvas')
 	private canvas: ElementRef;
@@ -26,7 +26,8 @@ export class KamiComponent implements OnInit, AfterViewInit {
 	}
 
 	ngAfterViewInit() {
-		this.kd = new KamiDraw(this.canvas.nativeElement, this.unitSize);
+		let kami = new Kami(['#FFAAAA']);
+		this.kd = new KamiDraw(this.canvas.nativeElement, this.unitSize, kami);
 		this.kd.Init();
 	}
 
