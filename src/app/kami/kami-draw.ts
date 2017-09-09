@@ -28,12 +28,10 @@ export class KamiDraw {
 			let c = this.drawCell(cell);
 			c.shape.on('click', (evt) => {
 				console.log(cell);
-				this.recolorCell(cell, this.kami.palette.get(0));
+				// this.recolorCell(cell, this.kami.palette.get(0));
 				this.stage.update();
 			});
 		});
-
-		this.recolorCell(this.kami.getCellAt(new TPos(1, 1, 1)), this.kami.palette.get(0));
 		this.stage.update();
 	}
 

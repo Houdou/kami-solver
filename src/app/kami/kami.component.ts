@@ -1,10 +1,8 @@
 import { Component, ViewChild, ElementRef, Input, OnInit, AfterViewInit } from '@angular/core';
 
-import { Kami, KamiCell, KamiNode, KamiColor, TPos } from '../model/kami';
+import { Kami, KamiData, KamiCell, KamiNode, KamiColor, TPos } from '../model/kami';
 
 import { KamiDraw } from './kami-draw';
-
-import * as createjs from 'createjs-module';
 
 @Component({
 	selector: 'app-kami',
@@ -20,13 +18,28 @@ export class KamiComponent implements OnInit, AfterViewInit {
 
 	private kd: KamiDraw;
 
+	public kami: Kami;
+
 	constructor() { }
 
 	ngOnInit() {
 	}
 
 	ngAfterViewInit() {
-		let kami = new Kami(['#FFAAAA']);
+		let data = KamiData.fromArray([
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 1, 1, 2, 2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+			[0, 0, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0],
+			[0, 0, 1, 1, 2, 2, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 1, 1, 2, 2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		]);
+		let kami = new Kami(['#AAAAFF', '#FFFFAA', '#FFAAAA'], data);
+		this.kami = kami;
 		this.kd = new KamiDraw(this.canvas.nativeElement, this.unitSize, kami);
 		this.kd.Init();
 	}

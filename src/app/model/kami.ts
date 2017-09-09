@@ -6,6 +6,22 @@ export class TPos {
 	public toIndex(): number {
 		return this.x * 1001 + 2 * this.y + this.lr;
 	}
+
+	public get up(): TPos {
+		return new TPos(this.x, (this.y * 2 + this.lr - 1) >> 1, 1 - this.lr);
+	}
+
+	public get down(): TPos {
+		return new TPos(this.x, (this.y * 2 + this.lr + 1) >> 1, 1 - this.lr);
+	}
+
+	public get leftOrRight(): TPos {
+		if(this.lr == 0)
+			return new TPos(this.x - 1, this.y, 1);
+		else {
+			return new TPos(this.x + 1, this.y, 0);
+		}
+	}
 }
 
 export class KamiStep {
@@ -58,7 +74,6 @@ export class KamiCell {
 		this._lr = v;
 	}
 
-
 	private _up : KamiCell;
 	public get up() : KamiCell {
 		return this._up;
@@ -75,16 +90,77 @@ export class KamiCell {
 		this._down = v;
 	}
 
+	public nodeInited: boolean = false;
+	public node: KamiNode;
+
+	public get isUpBorder(): boolean {
+		return this.up && (this.up.color.index != this.color.index);
+	}
+	public get isDownBorder(): boolean {
+		return this.down && (this.down.color.index != this.color.index);
+	}
+	public get isLRBorder(): boolean {
+		return this.lr && (this.lr.color.index != this.color.index);
+	}
+	public get isBorder(): boolean {
+		return this.isUpBorder || this.isLRBorder || this.isLRBorder;
+	}
+
 	constructor(public pos: TPos, public color: KamiColor) {
 
 	}
 
 }
 
-export class KamiNode {
-	public neib: Array<KamiNode>
-	constructor(public color: KamiColor) {
+export class KamiData {
+	constructor(public data: Map<number, number> = null, public xSize: number = 10, public ySize: number = 14) {
+		
+	}
 
+	public static fromArray(arr: Array<Array<number>>): KamiData {
+		let d = new KamiData();
+		d.data = new Map<number, number>();
+		d.xSize = arr.length;
+		d.ySize = arr[0].length;
+		for(let u = 0; u < arr.length; u++) {
+			for(let v = 0; v < arr[u].length; v++) {
+				d.data.set(u * 1000 + v, arr[u][v]);
+			}
+		}
+		return d;
+	}
+
+	public getDataAt(pos: TPos): number {
+		return this.data.get(pos.toIndex());
+	}
+}
+
+export class KamiNode {
+	public links: Array<KamiNode>;
+	public cells: Array<KamiCell>;
+	constructor(public index: number, public color: KamiColor) {
+		this.cells = new Array<KamiCell>();
+		this.links = new Array<KamiNode>();
+	}
+
+	public addLink(node: KamiNode): void {
+		if(this.links.indexOf(node) == -1) {
+			this.links.push(node);
+		}
+	}
+}
+
+export class KamiGraph {
+	public nodes: Array<KamiNode>;
+
+	constructor() {
+		this.nodes = new Array<KamiNode>();
+	}
+
+	public createNode(color: KamiColor): KamiNode {
+		let n = new KamiNode(this.nodes.length, color)
+		this.nodes.push(n);
+		return n;
 	}
 }
 
@@ -92,9 +168,11 @@ export class Kami {
 	private cells: Array<KamiCell>;
 	private indexs: Map<number, KamiCell>;
 
+	private graph: KamiGraph;
+
 	public palette: KamiColorPalette;
 
-	constructor(public initPalette: string[] = [], public xSize: number = 10, public ySize: number = 14, public unitSize: number = 32) {
+	constructor(public initPalette: string[] = [], public data: KamiData = null, public xSize: number = 10, public ySize: number = 14, public unitSize: number = 32) {
 		this.palette = new KamiColorPalette(...initPalette);
 
 		// Create all cells
@@ -109,10 +187,66 @@ export class Kami {
 				this.indexs.set(c.pos.toIndex(), c);
 			}
 		}
+
+		this.each((cell) => {
+			// Construct neibour links
+			cell.lr = this.getCellAt(cell.pos.leftOrRight);
+			cell.up = this.getCellAt(cell.pos.up);
+			cell.down = this.getCellAt(cell.pos.down);
+		});
+
+		if(data != null) {
+			this.data.data.forEach((color: number, index: number) => {
+				this.indexs.get(index).color = this.palette.get(color);
+			});
+			this.graph = this.initGraph();
+		}
+	}
+
+	public initGraph(): KamiGraph {
+		let g = new KamiGraph();
+		this.each((cell) => {
+			if(cell.nodeInited) return;
+
+			let toVisits = new Array<KamiCell>();
+			toVisits.push(cell);
+			let nodeColor = cell.color.index;
+			let node = g.createNode(cell.color);
+			while(toVisits.length > 0) {
+				// debugger;
+				let visit = toVisits.shift();
+				if(!visit || visit.nodeInited || visit.color.index != nodeColor) continue;
+				visit.nodeInited = true;
+				visit.node = node;
+				node.cells.push(visit);
+				
+				[visit.lr, visit.up, visit.down].forEach(c => {
+					if(!c || c.nodeInited) return;
+					toVisits.push(c);
+				});
+			}
+			node.cells.forEach((c) => {
+				if(c.isBorder) {
+					if(c.isUpBorder)
+						node.addLink(c.up.node);
+					if(c.isDownBorder)
+						node.addLink(c.down.node);
+					if(c.isUpBorder)
+						node.addLink(c.up.node);
+				}
+			})
+			console.log(node);
+		});
+
+		return g;
 	}
 
 	public getCellAt(pos: TPos): KamiCell {
-		return this.indexs.get(pos.toIndex());
+		let c = this.indexs.get(pos.toIndex());
+		if(c)
+			return c;
+		else
+			return null;
 	}
 
 	public checkPosValid(pos: TPos): boolean {
