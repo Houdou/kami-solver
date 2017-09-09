@@ -2,6 +2,16 @@ export class TPos {
 	constructor(public x: number, public y: number, public lr: number) {
 
 	}
+	
+	public get centerX(): number {
+		return this.x + 1/3 + this.lr * 1/3;
+	}
+	public get centerY(): number {
+		return (this.y + this.lr / 2 + this.x / 2) / Math.sqrt(3) * 2;
+	}
+	public get center(): Array<number> {
+		return [this.centerX, this.centerY];
+	}
 
 	public toIndex(): number {
 		return this.x * 1001 + 2 * this.y + this.lr;
@@ -94,13 +104,13 @@ export class KamiCell {
 	public node: KamiNode;
 
 	public get isUpBorder(): boolean {
-		return this.up && (this.up.color.index != this.color.index);
+		return this.up != null && this.up.color.index != this.color.index;
 	}
 	public get isDownBorder(): boolean {
-		return this.down && (this.down.color.index != this.color.index);
+		return this.down != null && this.down.color.index != this.color.index;
 	}
 	public get isLRBorder(): boolean {
-		return this.lr && (this.lr.color.index != this.color.index);
+		return this.lr != null && this.lr.color.index != this.color.index;
 	}
 	public get isBorder(): boolean {
 		return this.isUpBorder || this.isLRBorder || this.isLRBorder;
@@ -138,13 +148,19 @@ export class KamiData {
 export class KamiNode {
 	public links: Array<KamiNode>;
 	public cells: Array<KamiCell>;
+
+	public get center(): Array<number> {
+		let pos = this.cells.map(c => c.pos.center).reduce((a, b) => [a[0] + b[0], a[1] + b[1]]);
+		return pos.map(v => v/this.cells.length);
+	}
+
 	constructor(public index: number, public color: KamiColor) {
 		this.cells = new Array<KamiCell>();
 		this.links = new Array<KamiNode>();
 	}
 
 	public addLink(node: KamiNode): void {
-		if(this.links.indexOf(node) == -1) {
+		if(node && this.links.indexOf(node) == -1) {
 			this.links.push(node);
 		}
 	}
@@ -152,9 +168,30 @@ export class KamiNode {
 
 export class KamiGraph {
 	public nodes: Array<KamiNode>;
+	public get links(): Array<Array<KamiNode>> {
+		if(this.nodes.length == 0) return [];
+		let links = new Array<Array<KamiNode>>();
+		let visited = new Array<number>();
+		let toVisits = new Array<number>();
+		toVisits.push(0);
+		while(toVisits.length > 0) {
+			let visit = toVisits.shift();
+			if(visited.indexOf(visit) != -1) continue;
+			let node = this.nodes[visit];
+			node.links.forEach((link) => {
+				if(visited.indexOf(link.index) == -1) {
+					toVisits.push(link.index);
+					links.push([node, link]);
+				}
+			});
+			visited.push(node.index);
+		}
+		return links;
+	}
 
 	constructor() {
 		this.nodes = new Array<KamiNode>();
+		
 	}
 
 	public createNode(color: KamiColor): KamiNode {
@@ -168,7 +205,7 @@ export class Kami {
 	private cells: Array<KamiCell>;
 	private indexs: Map<number, KamiCell>;
 
-	private graph: KamiGraph;
+	public graph: KamiGraph;
 
 	public palette: KamiColorPalette;
 
@@ -225,18 +262,20 @@ export class Kami {
 					toVisits.push(c);
 				});
 			}
+		});
+
+		g.nodes.forEach((node) => {
 			node.cells.forEach((c) => {
 				if(c.isBorder) {
 					if(c.isUpBorder)
 						node.addLink(c.up.node);
 					if(c.isDownBorder)
 						node.addLink(c.down.node);
-					if(c.isUpBorder)
-						node.addLink(c.up.node);
+					if(c.isLRBorder)
+						node.addLink(c.lr.node);
 				}
 			})
-			console.log(node);
-		});
+		})
 
 		return g;
 	}

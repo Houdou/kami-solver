@@ -35,7 +35,7 @@ export class KamiDraw {
 		this.stage.update();
 	}
 
-	public drawCell(cell: KamiCell, addInStage: boolean = true): KamiDrawCell {
+	public drawCell(cell: KamiCell, addToStage: boolean = true): KamiDrawCell {
 		let t = new createjs.Shape();
 		t.graphics.ss(1, 0, 1, 10, true).s('rgba(0, 0, 0, 0.4)').f(cell.color.color)
 		.drawPolyStar(this.unitSize / 3, 0, this.unitSize * 2 / 3, 3, 0, 0);
@@ -47,7 +47,8 @@ export class KamiDraw {
 
 		let c = new KamiDrawCell(cell, t);
 		this.cells.set(cell.pos.toIndex(), c);
-		this.stage.addChild(t);
+		if(addToStage)
+			this.stage.addChild(t);
 		return c;
 	}
 

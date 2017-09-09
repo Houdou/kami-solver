@@ -4,6 +4,8 @@ import { Kami, KamiData, KamiCell, KamiNode, KamiColor, TPos } from '../model/ka
 
 import { KamiDraw } from './kami-draw';
 
+import { KamiService } from '../services/kami.service';
+
 @Component({
 	selector: 'app-kami',
 	templateUrl: './kami.component.html',
@@ -20,7 +22,13 @@ export class KamiComponent implements OnInit, AfterViewInit {
 
 	public kami: Kami;
 
-	constructor() { }
+	constructor(private kamiService: KamiService) {
+		this.kamiService.on('kamichange', (kami: Kami) => {
+			this.kami = kami;
+			this.kd = new KamiDraw(this.canvas.nativeElement, this.unitSize, this.kami);
+			this.kd.Init();
+		});
+	}
 
 	ngOnInit() {
 	}
@@ -39,9 +47,8 @@ export class KamiComponent implements OnInit, AfterViewInit {
 			[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 		]);
 		let kami = new Kami(['#AAAAFF', '#FFFFAA', '#FFAAAA'], data);
-		this.kami = kami;
-		this.kd = new KamiDraw(this.canvas.nativeElement, this.unitSize, kami);
-		this.kd.Init();
+		console.log(kami);
+		this.kamiService.kami = kami;
 	}
 
 	public solve(Kami): Array<TPos> {

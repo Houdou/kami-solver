@@ -14,14 +14,14 @@
 .main {
 	width: auto;
 	height: 100%;
-	padding: 8px 16px;
+	padding: 16px;
 	background-color: #DDD;
 }
 .node {
 	width: auto;
 	margin: 0 16px;
 	height: 100%;
-	padding: 8px 16px;
+	padding: 16px;
 	background-color: #DDD;
 	flex-grow: 2;
 }

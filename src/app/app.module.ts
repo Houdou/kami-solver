@@ -5,6 +5,7 @@ import { AppComponent } from './app.component';
 import { KamiComponent } from './kami/kami.component';
 import { KamiNodeComponent } from './kami-node/kami-node.component';
 
+import { KamiService } from './services/kami.service';
 
 @NgModule({
 	declarations: [
@@ -15,7 +16,9 @@ import { KamiNodeComponent } from './kami-node/kami-node.component';
 	imports: [
 		BrowserModule
 	],
-	providers: [],
+	providers: [
+		KamiService
+	],
 	bootstrap: [AppComponent]
 })
 export class AppModule { }
