@@ -25,7 +25,7 @@ export class NodeDraw {
 
 	public Init(): void {
 		let bg = new createjs.Shape();
-		bg.graphics.f('#F8F8F8').dr(0, 0, this.canvas.width, this.canvas.height);
+		bg.graphics.f('#EEEEEE').dr(0, 0, this.canvas.width, this.canvas.height);
 		this.stage.addChild(bg);
 		this.kami.graph.nodes.forEach((node) => {
 			this.drawNode(node);
@@ -55,7 +55,7 @@ export class NodeDraw {
 	public drawLink(nodeL: KamiNode, nodeR: KamiNode, addToStage: boolean = true): DrawLink {
 		let link = new createjs.Shape();
 		let [x0, y0] = nodeL.center, [x1, y1] = nodeR.center;
-		link.graphics.ss(2, 0, 1, 10, true).s('rgba(0, 0, 0, 0.4)')
+		link.graphics.ss(6, 1, 1, 10, true).s('rgba(80, 80, 80, 1)')
 			.mt(x0 * this.unitSize * 1.25, y0 * this.unitSize)
 			.lt(x1 * this.unitSize * 1.25, y1 * this.unitSize);
 		if(addToStage)

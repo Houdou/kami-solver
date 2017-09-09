@@ -182,6 +182,15 @@ export class KamiGraph {
 				if(visited.indexOf(link.index) == -1) {
 					toVisits.push(link.index);
 					links.push([node, link]);
+				} else {
+					let exist = false;
+					links.forEach((currentLink) => {
+						exist = exist || (currentLink[0] == node && currentLink[1] == link);
+						exist = exist || (currentLink[0] == link && currentLink[1] == node);
+					});
+					if(!exist) {
+						links.push([node, link]);
+					}
 				}
 			});
 			visited.push(node.index);
