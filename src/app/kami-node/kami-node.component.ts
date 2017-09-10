@@ -25,8 +25,16 @@ export class KamiNodeComponent implements OnInit, AfterViewInit {
 	constructor(private kamiService: KamiService) {
 		this.kamiService.on('kamichange', (kami: Kami) => {
 			this.kami = kami;
-			this.nd = new NodeDraw(this.canvas.nativeElement, this.unitSize, this.kami);
-			this.nd.Init();
+			if(this.nd) {
+				this.nd.Init();
+			} else {
+				this.nd = new NodeDraw(this.canvas.nativeElement, this.unitSize, this.kami);
+				this.nd.Init();
+			}
+		});
+		this.kamiService.on('graphchange', (kami: Kami) => {
+			// console.log(this.nd.kami.graph);
+			this.nd.updateGraph();
 		});
 	}
 

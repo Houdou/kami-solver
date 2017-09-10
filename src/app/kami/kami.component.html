@@ -1,1 +1,13 @@
 <canvas ref-canvas width="640" height="640" class="board"></canvas>
+<div class="gadget">
+	<div class="operations">
+		<div class="operation step-count">count: {{stepCount}}</div>
+		<div class="operation reset" (click)="reset()">reset</div>
+	</div>
+	<div class="colors" ref-colorsPanel>
+		<div class="color" *ngFor="let color of colors"
+			[style.backgroundColor]="color.color" (click)="useColor(color)"
+			[ngClass]="{'color-selected': color == colorSelected}"
+		></div>
+	</div>
+</div>

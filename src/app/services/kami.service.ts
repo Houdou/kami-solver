@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { Kami, KamiGraph, KamiNode, KamiCell, KamiColor } from '../model/kami';
+import { Kami, KamiGraph, KamiNode, KamiCell, KamiColor, KamiColorPalette } from '../model/kami';
 
 import { Event as LocalEmitter } from './event';
 
@@ -13,6 +13,7 @@ export class KamiService extends LocalEmitter {
 	public set kami(v : Kami) {
 		this._kami = v;
 		this.emit('kamichange', this._kami);
+		this.emit('palettechange', this._kami.palette.getAllColors());
 	}
 
 	private _paint : KamiColor;
@@ -21,6 +22,7 @@ export class KamiService extends LocalEmitter {
 	}
 	public set paint(v : KamiColor) {
 		this._paint = v;
+		this._kami.currentColor = v;
 		this.emit('paintchange', this._paint);
 	}
 

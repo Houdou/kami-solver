@@ -36,7 +36,7 @@ export class Event implements IEvent {
 			return item.event === event;
 		});
 		this._invokeListeners(items, ...a);
-		this._listeners = items.filter(item => !item.once);
+		this._listeners = this._listeners.filter(item => !(item.once && item.event === event));
 		return listenerAvailable;
 	}
 	public getMaxListeners(): number {

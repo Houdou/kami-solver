@@ -24,30 +24,46 @@ export class NodeDraw {
 	}
 
 	public Init(): void {
+		this.stage.removeAllChildren();
 		let bg = new createjs.Shape();
 		bg.graphics.f('#EEEEEE').dr(0, 0, this.canvas.width, this.canvas.height);
 		this.stage.addChild(bg);
-		this.kami.graph.nodes.forEach((node) => {
-			this.drawNode(node);
-		});
 		this.kami.graph.links.forEach((nodes) => {
 			let [nodeL, nodeR] = nodes;
 			this.drawLink(nodeL, nodeR);
 		})
+		this.kami.graph.nodes.forEach((node) => {
+			this.drawNode(node);
+		});
 		this.stage.update();
+	}
+
+	public updateGraph(): void {
+		this.Init();
+		// console.log(this.kami.graph);
+		// console.log("UPDATE");
+		// this.stage.removeAllChildren();
+		// this.stage.update();
 	}
 
 	public drawNode(node: KamiNode, addToStage: boolean = true): DrawNode {
 		let c = new createjs.Shape();
 		c.graphics.ss(2, 0, 1, 10, true).s('rgba(0, 0, 0, 0.4)').f(node.color.color).dc(0, 0, this.unitSize);
+		c.alpha = 0.8;
 		let pos = node.center;
-		console.log(node, pos);
+		// console.log(node, pos);
 		c.x = pos[0] * this.unitSize * 1.25;
 		c.y = pos[1] * this.unitSize;
 		c.scaleX = c.scaleY = (node.cells.length / 5) ** 0.2;
 
+
 		if(addToStage)
 			this.stage.addChild(c);
+
+		let t = new createjs.Text("" + node.index, '24px Consolas');
+		t.x = c.x;
+		t.y = c.y;
+		this.stage.addChild(t);
 
 		return new DrawNode(node, c);
 	}

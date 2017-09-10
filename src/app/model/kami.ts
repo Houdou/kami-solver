@@ -64,6 +64,10 @@ export class KamiColorPalette {
 		return this._colors[i];
 	}
 
+	public getAllColors(): KamiColor[] {
+		return this._colors.copyWithin(0, 0);
+	}
+
 	public createNewColor(color: string): KamiColor {
 		let c = new KamiColor(this._colors.length, color);
 		this._colors.push(c);
@@ -123,13 +127,14 @@ export class KamiCell {
 }
 
 export class KamiData {
-	constructor(public data: Map<number, number> = null, public xSize: number = 10, public ySize: number = 14) {
+	constructor(public data: Map<number, number> = null, public palette: KamiColorPalette = null, public xSize: number = 10, public ySize: number = 14) {
 		
 	}
 
-	public static fromArray(arr: Array<Array<number>>): KamiData {
+	public static fromArray(arr: Array<Array<number>>, colors: Array<string>): KamiData {
 		let d = new KamiData();
 		d.data = new Map<number, number>();
+		d.palette = new KamiColorPalette(...colors);
 		d.xSize = arr.length;
 		d.ySize = arr[0].length;
 		for(let u = 0; u < arr.length; u++) {
@@ -149,6 +154,8 @@ export class KamiNode {
 	public links: Array<KamiNode>;
 	public cells: Array<KamiCell>;
 
+	public linkVisited: boolean;
+
 	public get center(): Array<number> {
 		let pos = this.cells.map(c => c.pos.center).reduce((a, b) => [a[0] + b[0], a[1] + b[1]]);
 		return pos.map(v => v/this.cells.length);
@@ -164,22 +171,29 @@ export class KamiNode {
 			this.links.push(node);
 		}
 	}
+
+	public deleteLink(node: KamiNode): void {
+		if(node && this.links.indexOf(node) != -1) {
+			this.links.splice(this.links.indexOf(node), 1);
+		}
+	}
 }
 
 export class KamiGraph {
 	public nodes: Array<KamiNode>;
+
 	public get links(): Array<Array<KamiNode>> {
 		if(this.nodes.length == 0) return [];
 		let links = new Array<Array<KamiNode>>();
-		let visited = new Array<number>();
+		this.nodes.map(node => node.linkVisited = false);
 		let toVisits = new Array<number>();
-		toVisits.push(0);
+		toVisits.push(this.nodes[0].index);
 		while(toVisits.length > 0) {
 			let visit = toVisits.shift();
-			if(visited.indexOf(visit) != -1) continue;
+			if(this.nodes[visit].linkVisited) continue;
 			let node = this.nodes[visit];
 			node.links.forEach((link) => {
-				if(visited.indexOf(link.index) == -1) {
+				if(!link.linkVisited) {
 					toVisits.push(link.index);
 					links.push([node, link]);
 				} else {
@@ -193,7 +207,7 @@ export class KamiGraph {
 					}
 				}
 			});
-			visited.push(node.index);
+			node.linkVisited = true;
 		}
 		return links;
 	}
@@ -208,6 +222,57 @@ export class KamiGraph {
 		this.nodes.push(n);
 		return n;
 	}
+
+	public deleteNode(node): void {
+		if(node && this.nodes.indexOf(node) != -1) {
+			this.nodes.splice(this.nodes.indexOf(node), 1);
+		}
+	}
+
+	public colorNode(node: KamiNode, color: KamiColor): void {
+		node.color = color;
+		node.cells.forEach((cell) => {
+			cell.color = color;
+		});
+	}
+
+	public mergeNode(node: KamiNode, color: KamiColor): void {
+		node.color = color;
+		node.cells.forEach((cell) => {
+			cell.color = color;
+		});
+		let toMerge = new Array<KamiNode>();
+		node.links.forEach((link) => {
+			if(link.color == node.color) {
+				toMerge.push(link);
+				link.cells.forEach((cell) => {
+					node.cells.push(cell);
+					cell.node = node;
+				});
+			}
+		});
+		console.log(toMerge);
+		// toMerge.forEach((mergingNode) => {
+		// 	mergingNode.cells = [];
+		// 	mergingNode.links.forEach((mergingNodeLink) => {
+		// 		if(mergingNodeLink == node) return;
+		// 		node.addLink(mergingNodeLink);
+		// 		mergingNodeLink.links.forEach((reverseLink) => {
+		// 			if(reverseLink == mergingNode) {
+		// 				reverseLink.deleteLink(mergingNode);
+		// 				reverseLink.addLink(node);
+		// 			}
+		// 		});
+		// 	})
+		// });
+		toMerge.forEach((mergingNode) => {
+			this.deleteNode(mergingNode);
+		});
+
+		this.nodes.forEach((node, index) => {
+			node.index = index;
+		});
+	}
 }
 
 export class Kami {
@@ -217,15 +282,19 @@ export class Kami {
 	public graph: KamiGraph;
 
 	public palette: KamiColorPalette;
+	public currentColor: KamiColor;
 
-	constructor(public initPalette: string[] = [], public data: KamiData = null, public xSize: number = 10, public ySize: number = 14, public unitSize: number = 32) {
-		this.palette = new KamiColorPalette(...initPalette);
-
+	constructor(public data: KamiData, public xSize: number = 10, public ySize: number = 14, public unitSize: number = 32) {
+		this.palette = data.palette.clone();
 		// Create all cells
+		this.init();
+	}
+
+	public init(): void {
 		this.cells = new Array<KamiCell>();
 		this.indexs = new Map<number, KamiCell>();
-		for(let u = 0; u < xSize; u++) {
-			for(let v = 0; v < 2 * ySize + 1; v++) {
+		for(let u = 0; u < this.xSize; u++) {
+			for(let v = 0; v < 2 * this.ySize + 1; v++) {
 				let c = new KamiCell(new TPos(u, (v - u) >> 1, (v + u % 2) % 2), KamiColor.Default);
 				// if(!this.checkPosValid(c.pos))
 				// 	console.log(c.pos);
@@ -241,16 +310,15 @@ export class Kami {
 			cell.down = this.getCellAt(cell.pos.down);
 		});
 
-		if(data != null) {
-			this.data.data.forEach((color: number, index: number) => {
-				this.indexs.get(index).color = this.palette.get(color);
-			});
-			this.graph = this.initGraph();
-		}
+		this.data.data.forEach((color: number, index: number) => {
+			this.indexs.get(index).color = this.palette.get(color);
+		});
+		this.initGraph();
 	}
 
 	public initGraph(): KamiGraph {
 		let g = new KamiGraph();
+		this.each((cell) => { cell.nodeInited = false; });
 		this.each((cell) => {
 			if(cell.nodeInited) return;
 
@@ -286,7 +354,41 @@ export class Kami {
 			})
 		})
 
+		this.graph = g;
+		this.analyseGraph();
 		return g;
+	}
+
+	public analyseGraph(): void {
+		let nodeRankInit = new Map<number, number>();
+		let nodeRank = new Map<number, number>();
+		let nodeRankMerge = new Map<number, number>();
+		// Init
+		this.graph.nodes.forEach((node) => {
+			nodeRankInit.set(node.index, 1);
+		});
+		this.graph.nodes.forEach((node) => {
+			let p = node.links.map(link => nodeRankInit.get(link.index)).reduce((a, b) => a + b);
+			nodeRank.set(node.index, p - 1);
+		});
+		this.graph.nodes.forEach((node) => {
+			let p = node.links.map(link => nodeRank.get(link.index)).reduce((a, b) => a + b);
+			nodeRankMerge.set(node.index, p - 1);
+		});
+
+		// nodeRank
+		let nodeRankSort = new Array<Array<number>>();
+		nodeRankMerge.forEach((rank, node) => {
+			nodeRankSort.push([rank, node]);
+		});
+		nodeRankSort.sort((a, b) => {
+			return b[0] - a[0];
+		});
+		console.log(nodeRankSort);
+
+		// nodeRankSort.forEach((pair) => {
+		// 	console.log(this.graph.nodes[pair[1]])
+		// });
 	}
 
 	public getCellAt(pos: TPos): KamiCell {
